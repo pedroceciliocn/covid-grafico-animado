@@ -1,0 +1,123 @@
+---
+title: "Parte 1 gráfico animado covid"
+author: "Pedro Neto"
+date: "05/09/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Carregando os pacotes
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(httr)
+library(readxl)
+library(RCurl)
+```
+
+### Função para verificar se o link funciona
+```{r}
+urlExists <- function(address) { 
+  tryCatch ({ 
+    con <- url(address) 
+    a <- capture.output(suppressWarnings(readLines(con))) 
+    close(con) 
+    TRUE;
+    }, 
+    error = function(err) { 
+      occur <- grep("cannot open the connection", capture.output(err)); 
+      if(length(occur) > 0) FALSE;
+})
+}
+```
+
+### planilhas passadas para as variáveis
+```{r}
+url1 = paste0("https://opendata.ecdc.europa.eu/covid19/nationalcasedeath/xlsx/data.xlsx")
+
+# url2 = paste0("https://opendata.ecdc.europa.eu/covid19/nationalcasedeath/xlsx/data.xlsx",Sys.Date(),".xls")
+
+if (urlExists(url1))
+{
+  cat("xlsx file exists")
+  GET(url1, write_disk(tf <- tempfile(fileext = ".xlsx"))) 
+  df = read_xlsx(tf) 
+}
+
+# if (urlExists(url2)) 
+# { 
+#   cat("xls file exists") 
+#   GET(url2, write_disk(tf <- tempfile(fileext = ".xls"))) 
+#   df = read_excel(tf) 
+# }
+```
+### Covid explore (mortes no total)
+```{r}
+df_2 <- df %>% 
+  filter(indicator == 'deaths' & country != 'EU/EEA (total)' & country != 'Europe (total)'& country != 'Africa (total)'&
+                                              country != 'America (total)'& country != 'Oceania (total)' & country != 'Asia (total)')
+
+covid_death_total <- sum(df_2$weekly_count)
+
+```
+
+
+There have been `r covid_death_total` deaths. The features we have are: `r names(df)`.
+
+
+### Sumarizando o numero de mortes por país (e por continentes)
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+df_3 <- df %>% 
+  filter(indicator == 'deaths') %>% 
+  group_by(country) %>% 
+  summarise(deaths = sum(weekly_count))
+
+df_3
+
+```
+
+
+```{r}
+df_4 <- df %>% 
+  filter(indicator == 'cases') %>% 
+  group_by(country) %>% 
+  summarise(cases = sum(weekly_count))
+
+df_4
+```
+
+
+
+
+```{r}
+df_5 <- inner_join(df_3, df_4)
+
+df_5
+
+
+```
+
+```{r}
+df_6 <- df_5 %>% 
+  mutate(death_rate = deaths/cases)
+df_6
+```
+
+```{r}
+library(ggplot2)
+
+df_6 %>% filter(deaths > 0) %>%
+  group_by(country) %>%
+  filter(country != 'EU/EEA (total)' & country != 'Europe (total)'& country != 'Africa (total)'&
+                                              country != 'America (total)'& country != 'Oceania (total)' & country != 'Asia (total)') %>% 
+  summarise(cases_total = sum(cases), deaths_total = sum(deaths)) %>%
+  ggplot(aes(country)) +
+  geom_point(aes(y = cases_total), color = "yellow") +
+  geom_point(aes(y = deaths_total), color = "red") +
+  coord_flip()
+```
+

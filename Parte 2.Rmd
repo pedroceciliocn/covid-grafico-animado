@@ -1,0 +1,13 @@
+---
+title: "Parte 2 gráfico animado covid"
+author: "Pedro Neto"
+date: "05/09/2021"
+output: 
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
