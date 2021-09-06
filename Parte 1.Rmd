@@ -55,6 +55,25 @@ if (urlExists(url1))
 #   df = read_excel(tf) 
 # }
 ```
+```{r}
+df
+```
+
+#### completamente errado
+```{r}
+df_up <- df
+df_up$year_week <- (df_up$year_week)
+df %>% 
+  select(country_code, indicator, year_week,cumulative_count) %>% 
+  filter(country_code == 'BRA' & year_week > '2021-30') %>% 
+  ggplot(aes(x=year_week, y=cumulative_count), color = indicator) +
+  geom_col()
+```
+
+
+
+
+
 ### Covid explore (mortes no total)
 ```{r}
 df_2 <- df %>% 
